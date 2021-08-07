@@ -2,6 +2,7 @@ from scapy.all import IP, ICMP, TCP, sr1, UDP, DNS, RandShort, DNSQR
 from ipaddress import IPv4Network, ip_address
 from multiprocessing import Pool
 from argparse import ArgumentParser
+import csv
 
 dns_server=None
 
@@ -43,21 +44,28 @@ def resolve_IP(ip_address_to_resolve):
             except Exception as e:
                 pass
     return host_name
-
         
 def send_ping(address):
+    results = {}
+    results[str(address)]=[]
     packet = IP(dst = str(address))/ICMP(type = 8, code = 0)
     response = sr1(packet, verbose = 0, timeout = 2)
+    host_name = resolve_IP(address)
     if response:
         if int(response.getlayer(ICMP).type) == 0:
-            host_name = resolve_IP(address)
             print("Host" , address , "is reachable. Its host name is" , host_name)
-            send_tcp(address)
+            tcp_open_ports = send_tcp(address)
+            results[str(address)]=[host_name,"Reachable", tcp_open_ports]
         elif int(response.getlayer(ICMP).type) == 3:
             print("Destination" , address , "is unreachable")
+            results[str(address)]=[host_name,"ICMP Unreachable"]
+    else:
+        results[str(address)]=[host_name,"No response"]
+    return results
 
 def send_tcp(address):
     ports = list(tcp_common_ports.keys()) ##returns a list of all keys (aka port numbers) of tcp_common_ports dictionary
+    tcp_open_ports = []
     for p in ports:
         packet = IP(dst = str(address))/TCP(sport = RandShort(),dport = p, flags = "S")
         response = sr1(packet, verbose = 0, timeout = 2)
@@ -65,6 +73,7 @@ def send_tcp(address):
             if response.haslayer(TCP):
                 if str(response.getlayer(TCP).flags) == "SA":
                     print("Host ", address , "is listening in port",p,tcp_common_ports[p])
+                    tcp_open_ports.append(p)
                 elif str(response.getlayer(TCP.flags)) == "R":
                     print("Host ", address , "is rejecting conenction on port",p,tcp_common_ports[p])
             else:
@@ -72,7 +81,19 @@ def send_tcp(address):
                     print("Host " , address, ": communication prohibited on port",p,tcp_common_ports[p])
                 else:
                     print(response.summary())
+    return tcp_open_ports
         
+def saveResults(results):
+    with open ("scanner_results.csv", "w") as file:
+        write = csv.writer(file)
+        write.writerow(["IP Address", "Host Name", "Reachability",  "TCP Open ports"])
+        for r in results:
+            for k in r:
+                if len(r[k]) == 3:
+                    write.writerow([k, r[k][0], r[k][1], r[k][2]])
+                else:
+                    write.writerow([k, r[k][0], r[k][1], "[]"])
+
 
 def main():
     parser = ArgumentParser()
@@ -94,8 +115,18 @@ def main():
             network = input("Please enter a valid IPv4 subnet: ")
             
     with Pool(values.processes) as process:
-        process.map(send_ping, targets)
+        results = process.map(send_ping, targets)
 
+    print()
+    print("IP Address \t Host Name \t Reachability \t TCP Open ports")
+    print("---------------------------------------------------------------------")
+    for r in results:
+        for k in r:
+            if len(r[k]) == 3:
+                print(k, "\t", r[k][0],"\t", r[k][1], "\t", r[k][2])
+            else:
+                print(k, "\t", r[k][0],"\t", r[k][1], "\t", "[]")
+    saveResults(results)
 
 if __name__ == "__main__":
     main()
