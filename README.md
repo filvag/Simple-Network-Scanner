@@ -3,8 +3,9 @@
 This is a simple network scanner, created using Python 3 and Scapy (https://github.com/secdev/scapy/), as part of a personal learning exercise. 
 
 HOWTO:  
--p <integer> the number of processes to run in parallel (default: 10)  
--dns <IPv4 address> the DNS server to be used for our querries (default = "8.8.8.8")
+*-j* prints help message
+*-p <integer>* the number of processes to run in parallel (default: 10)  
+*-dns <IPv4 address>* the DNS server to be used for our querries (default = "8.8.8.8")
 
 After starting the program, it prompts for the IPv4 subnet (e.g. e.g. 192.168.1.0/24) or just an IPv4 address to be scanned.  
   
