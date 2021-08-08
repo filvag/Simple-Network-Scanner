@@ -3,7 +3,7 @@
 This is a simple network scanner, created using Python 3 and Scapy (https://github.com/secdev/scapy/), as part of a personal learning exercise. 
 
 HOWTO:  
-*-h*&nbsp;&nbsp;&nbsp;&nbsp;prints help message
+*-h*&nbsp;&nbsp;&nbsp;&nbsp;prints help message  
 *-p <integer>*&nbsp;&nbsp;&nbsp;&nbsp;the number of processes to run in parallel (default: 10)  
 *-dns <IPv4 address>*&nbsp;&nbsp;&nbsp;&nbsp;the DNS server to be used for our querries (default = "8.8.8.8")
 
